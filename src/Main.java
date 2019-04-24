@@ -1,0 +1,91 @@
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+
+public class Main {
+
+    private static Grid grid;
+    private static ArrayList<Agent> agents;
+    private static JLabel[][] gridLabels;
+    private static final int amountOfAgents = 10;
+    private static final int gridWith = 10;
+    private static final int gridHeight = 10;
+
+    public static void main(String[] args) {
+        System.out.println("Booting crowdsim... \n------------------------");
+
+        // Configure grid
+        Grid.setWidth(gridWith);
+        Grid.setHeight(gridHeight);
+        grid = Grid.getInstance();
+
+        System.out.println("Creating agents... \n------------------------");
+        agents = createAgents(amountOfAgents);
+
+        // Show the grid on a UI and start the simulation
+        buildGrid();
+        drawOccupiers();
+    }
+
+    private static void buildGrid() {
+
+        JPanel panel = new JPanel(new GridLayout(Grid.getWidth(), Grid.getHeight()));
+        panel.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
+
+        int gridWith = Grid.getWidth();
+        int gridHeight = Grid.getHeight();
+
+        gridLabels = new JLabel[gridWith][gridHeight];
+
+        for (int i = 0; i < (gridWith); i++) {
+            for (int j = 0; j < gridHeight; j++) {
+                final JLabel label = new JLabel();
+                label.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+                label.setBackground(Color.white);
+                label.setOpaque(true);
+                panel.add(label);
+                gridLabels[i][j] = label;
+            }
+        }
+
+        JFrame frame = new JFrame();
+        frame.add(panel);
+        frame.setMinimumSize(new Dimension(400, 300));
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+    }
+
+    private static void drawOccupiers() {
+
+        Occupier[][] occupiers = Grid.getOccupiers();
+
+        for (int i = 0; i < occupiers.length; i++) {
+            for (int j = 0; j < occupiers[i].length; j++) {
+                Occupier occupier = occupiers[i][j];
+
+                if (occupier != null) {
+                    // Draw occupier colors unto grid
+                    gridLabels[i][j].setBackground(occupier.occupierColor);
+                }
+
+            }
+        }
+    }
+
+    private static ArrayList<Agent> createAgents(int amount) {
+        ArrayList<Agent> newAgents = new ArrayList<>();
+
+        for (int i = 0; i < amount; i++) {
+            Agent newAgent = new Agent(Grid.getRandomPosition());
+            newAgents.add(newAgent);
+            Grid.addOccupier(newAgent);
+        }
+
+        return newAgents;
+    }
+
+    private void advanceSimulation() {
+        System.out.println("Advancing simulation... \n------------------------");
+        drawOccupiers();
+    }
+}
