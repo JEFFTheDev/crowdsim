@@ -11,7 +11,7 @@ public class Main {
     private static final int gridWith = 10;
     private static final int gridHeight = 10;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         System.out.println("Booting crowdsim... \n------------------------");
 
         // Configure grid
@@ -25,6 +25,10 @@ public class Main {
         // Show the grid on a UI and start the simulation
         buildGrid();
         drawOccupiers();
+
+        while(true){
+            advanceSimulation();
+        }
     }
 
     private static void buildGrid() {
@@ -84,8 +88,21 @@ public class Main {
         return newAgents;
     }
 
-    private void advanceSimulation() {
+    private static void advanceSimulation() throws InterruptedException {
         System.out.println("Advancing simulation... \n------------------------");
+
+        for (Agent agent: agents) {
+            agent.chooseNextStep();
+        }
+
+        Thread.sleep(1000);
+
+        for (Agent agent: agents) {
+            agent.advance();
+        }
+
+        Thread.sleep(1000);
+
         drawOccupiers();
     }
 }

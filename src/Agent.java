@@ -1,3 +1,5 @@
+import com.sun.corba.se.impl.orbutil.ObjectStreamClassUtil_1_3;
+
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
@@ -17,23 +19,29 @@ public class Agent extends Occupier {
         this.traveledPath = new ArrayList<>();
         this.occupierColor = Color.black;
         this.name = "Agent " + agentCount;
+        this.tempOccupier = new Occupier(startPos);
         agentCount++;
         System.out.println(this.name + " initiated at position: " + this.position + "\n------------------------");
     }
 
-    public void advance(Vector2 newPos) {
+    public void advance() {
 
         if (destinationReached()) {
             setRandomDestination();
         }
 
         traveledPath.add(this.position);
-        this.position = newPos;
+        Grid.removeOccuppierAtPos(this.position);
+        Grid.removeOccuppierAtPos(tempOccupier.position);
+        this.position = tempOccupier.position;
+        Grid.addOccupier(this);
         System.out.println(this.name + " moving towards: " + this.position + "\n------------------------");
     }
 
     public void chooseNextStep() {
-        tempOccupier = new Occupier(new Vector2(0, 0));
+        Vector2 nextPos = Grid.getSurroundingTiles(this.position).get(0);
+        tempOccupier.position = nextPos;
+        Grid.addOccupier(tempOccupier);
     }
 
     private boolean destinationReached() {

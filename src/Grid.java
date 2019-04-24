@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Random;
 
 public class Grid {
@@ -45,11 +46,15 @@ public class Grid {
         occupiers[pos.x][pos.z] = null;
     }
 
-    public boolean isOccupied(Vector2 space) {
-        return occupiers[space.x][space.z] == null;
+    public static boolean isOccupied(Vector2 space) {
+        if(!isOutOfBounds(space)){
+            return occupiers[space.x][space.z] != null;
+        }
+
+        return true;
     }
 
-    public boolean isOutOfBounds(Vector2 space) {
+    public static boolean isOutOfBounds(Vector2 space) {
         if (space.x > width || space.x < 0) {
             return true;
         }
@@ -67,5 +72,26 @@ public class Grid {
 
     public static void addOccupier(Occupier occupier) {
         occupiers[occupier.position.x][occupier.position.z] = occupier;
+    }
+
+    public static ArrayList<Vector2> getSurroundingTiles(Vector2 fromThis) {
+
+        ArrayList<Vector2> posList = new ArrayList<>();
+        posList.add(new Vector2(fromThis.x, fromThis.z + 1));
+        posList.add(new Vector2(fromThis.x - 1, fromThis.z + 1));
+        posList.add(new Vector2(fromThis.x - 1, fromThis.z));
+        posList.add(new Vector2(fromThis.x - 1, fromThis.z - 1));
+        posList.add(new Vector2(fromThis.x, fromThis.z - 1));
+        posList.add(new Vector2(fromThis.x + 1, fromThis.z - 1));
+        posList.add(new Vector2(fromThis.x + 1, fromThis.z));
+        posList.add(new Vector2(fromThis.x + 1, fromThis.z + 1));
+
+        for (Vector2 pos : posList) {
+            if(isOccupied(pos) | isOutOfBounds(pos)){
+                posList.remove(pos);
+            }
+        }
+
+        return posList;
     }
 }
