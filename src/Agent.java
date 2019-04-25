@@ -5,7 +5,7 @@ import java.util.Random;
 public class Agent extends Occupier {
 
     private ArrayList<Vector2> traveledPath;
-    private Vector2 destination;
+    public Vector2 destination;
     private static int agentCount;
 
     // Temporary occupier to claim a grid tile for the next step of this agent
@@ -34,19 +34,19 @@ public class Agent extends Occupier {
         Grid.removeOccuppierAtPos(tempOccupier.position);
         this.position = tempOccupier.position;
         Grid.addOccupier(this);
-        System.out.println(this.name + " moving towards: " + this.position + "\n------------------------");
+        //System.out.println(this.name + " moving towards: " + this.position + "\n------------------------");
     }
 
     public void chooseNextStep() {
         // check if list has more than 0 items
         ArrayList<Vector2> tiles = Grid.getSurroundingAvailNodes(this.position);
 
-        if(tiles.isEmpty()){
+        if (tiles.isEmpty()) {
             return;
         }
 
-        Vector2 nextPos = tiles.get(new Random().nextInt(tiles.size()));
-        tempOccupier.position = nextPos;
+        //tiles.get(new Random().nextInt(tiles.size()));
+        tempOccupier.position = closestNodeToDest(tiles);
         Grid.addOccupier(tempOccupier);
     }
 
@@ -56,5 +56,33 @@ public class Agent extends Occupier {
 
     private void setRandomDestination() {
         destination = Grid.getRandomPosition();
+    }
+
+    private Vector2 closestNodeToDest(ArrayList<Vector2> positions) {
+        double shortestDist = 0;
+        Vector2 bestPos = this.position;
+
+        for (int i = 0; i < positions.size(); i++) {
+            Vector2 pos = positions.get(i);
+            double currentDist = distanceBetweenVectors(destination, pos);
+
+            if(i == 0){
+                shortestDist = currentDist;
+                bestPos = pos;
+            }
+
+            if(currentDist < shortestDist ){
+                shortestDist = currentDist;
+                bestPos = pos;
+            }
+        }
+
+        return bestPos;
+    }
+
+    private double distanceBetweenVectors(Vector2 from, Vector2 to){
+        double a = Math.abs(from.x - to.x);
+        double b = Math.abs(from.z - to.z);
+        return Math.sqrt((a * a) + (b * b));
     }
 }

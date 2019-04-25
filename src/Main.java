@@ -7,9 +7,9 @@ public class Main {
     private static Grid grid;
     private static ArrayList<Agent> agents;
     private static JLabel[][] gridLabels;
-    private static final int amountOfAgents = 10;
-    private static final int gridWith = 20;
-    private static final int gridHeight = 20;
+    private static final int amountOfAgents = 30;
+    private static final int gridWith = 50;
+    private static final int gridHeight = 50;
 
     public static void main(String[] args) throws InterruptedException {
         System.out.println("Booting crowdsim... \n------------------------");
@@ -77,6 +77,14 @@ public class Main {
                     label.setBackground(occupier.occupierColor);
                     label.setText(occupier.getName());
                     label.setForeground(Color.white);
+
+                    if(occupier.getClass() == Agent.class){
+                        //Agent a = (Agent)occupier;
+                        //JLabel destinationlabel = gridLabels[a.destination.x][a.destination.z];
+                        //destinationlabel.setBackground(Color.blue);
+                        //destinationlabel.setText(a.getName() + " dest");
+                    }
+
                 }
 
             }
@@ -115,16 +123,16 @@ public class Main {
 
         drawOccupiers();
 
-        Thread.sleep(333);
+        Thread.sleep(200);
 
         for (Agent agent: agents) {
             agent.advance();
         }
 
-        Thread.sleep(333);
+        Thread.sleep(200);
 
         drawOccupiers();
 
-        Thread.sleep(333);
+        Thread.sleep(200);
     }
 }
