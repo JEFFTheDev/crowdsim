@@ -48,6 +48,8 @@ public class Main {
                 label.setBackground(Color.white);
                 label.setOpaque(true);
                 panel.add(label);
+                label.setHorizontalAlignment(JLabel.CENTER);
+                label.setVerticalAlignment(JLabel.CENTER);
                 gridLabels[i][j] = label;
             }
         }

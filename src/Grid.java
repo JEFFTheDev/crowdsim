@@ -75,7 +75,7 @@ public class Grid {
         occupiers[occupier.position.x][occupier.position.z] = occupier;
     }
 
-    public static ArrayList<Vector2> getSurroundingTiles(Vector2 fromThis) {
+    public static ArrayList<Vector2> getSurroundingAvailNodes(Vector2 fromThis) {
 
         Vector2[] posList = new Vector2[]{
                 new Vector2(fromThis.x, fromThis.z + 1),

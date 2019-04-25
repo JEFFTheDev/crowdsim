@@ -1,6 +1,3 @@
-import com.sun.corba.se.impl.orbutil.ObjectStreamClassUtil_1_3;
-
-import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Random;
@@ -28,6 +25,7 @@ public class Agent extends Occupier {
     public void advance() {
 
         if (destination == null | destinationReached()) {
+            System.out.println(this.name + " reached destinaion! \n------------------------");
             setRandomDestination();
         }
 
@@ -41,7 +39,7 @@ public class Agent extends Occupier {
 
     public void chooseNextStep() {
         // check if list has more than 0 items
-        ArrayList<Vector2> tiles = Grid.getSurroundingTiles(this.position);
+        ArrayList<Vector2> tiles = Grid.getSurroundingAvailNodes(this.position);
 
         if(tiles.isEmpty()){
             return;

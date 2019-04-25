@@ -3,7 +3,7 @@ import java.awt.*;
 public class Occupier {
 
     // Set default occupier color to yellow
-    public Color occupierColor = Color.yellow;
+    public Color occupierColor = Color.green;
     protected Vector2 position;
     protected String name = "Occupied";
 
