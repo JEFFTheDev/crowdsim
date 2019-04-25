@@ -55,10 +55,9 @@ public class Grid {
     }
 
     public static boolean isOccupied(Vector2 space) {
-        try{
+        try {
             return occupiers[space.x][space.z] != null;
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             return true;
         }
     }

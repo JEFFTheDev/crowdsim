@@ -66,12 +66,12 @@ public class Agent extends Occupier {
             Vector2 pos = positions.get(i);
             double currentDist = distanceBetweenVectors(destination, pos);
 
-            if(i == 0){
+            if (i == 0) {
                 shortestDist = currentDist;
                 bestPos = pos;
             }
 
-            if(currentDist < shortestDist ){
+            if (currentDist < shortestDist) {
                 shortestDist = currentDist;
                 bestPos = pos;
             }
@@ -80,7 +80,7 @@ public class Agent extends Occupier {
         return bestPos;
     }
 
-    private double distanceBetweenVectors(Vector2 from, Vector2 to){
+    private double distanceBetweenVectors(Vector2 from, Vector2 to) {
         double a = Math.abs(from.x - to.x);
         double b = Math.abs(from.z - to.z);
         return Math.sqrt((a * a) + (b * b));

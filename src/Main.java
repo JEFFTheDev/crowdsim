@@ -26,7 +26,7 @@ public class Main {
         buildGrid();
         drawOccupiers();
 
-        while(true){
+        while (true) {
             advanceSimulation();
         }
     }
@@ -78,7 +78,7 @@ public class Main {
                     label.setText(occupier.getName());
                     label.setForeground(Color.white);
 
-                    if(occupier.getClass() == Agent.class){
+                    if (occupier.getClass() == Agent.class) {
                         //Agent a = (Agent)occupier;
                         //JLabel destinationlabel = gridLabels[a.destination.x][a.destination.z];
                         //destinationlabel.setBackground(Color.blue);
@@ -91,10 +91,10 @@ public class Main {
         }
     }
 
-    private static void resetGridColors(){
+    private static void resetGridColors() {
 
-        for(int i = 0; i < gridWith; i ++){
-            for(int j = 0; j < gridHeight; j++){
+        for (int i = 0; i < gridWith; i++) {
+            for (int j = 0; j < gridHeight; j++) {
                 JLabel label = gridLabels[i][j];
                 label.setBackground(Color.white);
                 label.setText("");
@@ -117,7 +117,7 @@ public class Main {
     private static void advanceSimulation() throws InterruptedException {
         System.out.println("Advancing simulation... \n------------------------");
 
-        for (Agent agent: agents) {
+        for (Agent agent : agents) {
             agent.chooseNextStep();
         }
 
@@ -125,7 +125,7 @@ public class Main {
 
         Thread.sleep(200);
 
-        for (Agent agent: agents) {
+        for (Agent agent : agents) {
             agent.advance();
         }
 
