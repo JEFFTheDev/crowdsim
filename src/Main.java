@@ -8,8 +8,8 @@ public class Main {
     private static ArrayList<Agent> agents;
     private static JLabel[][] gridLabels;
     private static final int amountOfAgents = 10;
-    private static final int gridWith = 10;
-    private static final int gridHeight = 10;
+    private static final int gridWith = 20;
+    private static final int gridHeight = 20;
 
     public static void main(String[] args) throws InterruptedException {
         System.out.println("Booting crowdsim... \n------------------------");
@@ -61,6 +61,8 @@ public class Main {
 
     private static void drawOccupiers() {
 
+        resetGridColors();
+
         Occupier[][] occupiers = Grid.getOccupiers();
 
         for (int i = 0; i < occupiers.length; i++) {
@@ -69,9 +71,23 @@ public class Main {
 
                 if (occupier != null) {
                     // Draw occupier colors unto grid
-                    gridLabels[i][j].setBackground(occupier.occupierColor);
+                    JLabel label = gridLabels[i][j];
+                    label.setBackground(occupier.occupierColor);
+                    label.setText(occupier.getName());
+                    label.setForeground(Color.white);
                 }
 
+            }
+        }
+    }
+
+    private static void resetGridColors(){
+
+        for(int i = 0; i < gridWith; i ++){
+            for(int j = 0; j < gridHeight; j++){
+                JLabel label = gridLabels[i][j];
+                label.setBackground(Color.white);
+                label.setText("");
             }
         }
     }
@@ -95,14 +111,18 @@ public class Main {
             agent.chooseNextStep();
         }
 
-        Thread.sleep(1000);
+        drawOccupiers();
+
+        Thread.sleep(333);
 
         for (Agent agent: agents) {
             agent.advance();
         }
 
-        Thread.sleep(1000);
+        Thread.sleep(333);
 
         drawOccupiers();
+
+        Thread.sleep(333);
     }
 }
