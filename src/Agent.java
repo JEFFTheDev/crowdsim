@@ -25,7 +25,7 @@ public class Agent extends Occupier {
     public void advance() {
 
         if (destination == null | destinationReached()) {
-            System.out.println(this.name + " reached destinaion! \n------------------------");
+            System.out.println(this.name + " reached destination! \n------------------------");
             setRandomDestination();
         }
 
@@ -66,12 +66,7 @@ public class Agent extends Occupier {
             Vector2 pos = positions.get(i);
             double currentDist = distanceBetweenVectors(destination, pos);
 
-            if (i == 0) {
-                shortestDist = currentDist;
-                bestPos = pos;
-            }
-
-            if (currentDist < shortestDist) {
+            if (currentDist < shortestDist || i == 0) {
                 shortestDist = currentDist;
                 bestPos = pos;
             }

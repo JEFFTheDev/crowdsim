@@ -4,22 +4,13 @@ import java.util.Random;
 public class Grid {
 
     private static Occupier[][] occupiers;
-    private static Grid instance;
     private static int width;
     private static int height;
 
-    public Grid(int width, int height) {
+    public static void Initlialize(int width, int height){
         occupiers = new Occupier[width][height];
-        this.width = width;
-        this.height = height;
-    }
-
-    public static Grid getInstance() {
-        if (instance == null) {
-            instance = new Grid(width, height);
-        }
-
-        return instance;
+        Grid.width = width;
+        Grid.height = height;
     }
 
     public static Vector2 getRandomPosition() {
@@ -32,14 +23,6 @@ public class Grid {
 
     public static int getHeight() {
         return height;
-    }
-
-    public static void setWidth(int width) {
-        Grid.width = width;
-    }
-
-    public static void setHeight(int height) {
-        Grid.height = height;
     }
 
     public static void removeOccuppierAtPos(Vector2 pos) {
