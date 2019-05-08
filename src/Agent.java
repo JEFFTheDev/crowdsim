@@ -1,3 +1,12 @@
+import crowd.sim.HlaAgent;
+import crowd.sim.HlaAgentManager;
+import crowd.sim.HlaAgentManagerListener;
+import crowd.sim.HlaAgentUpdater;
+import crowd.sim.exceptions.HlaAttributeNotOwnedException;
+import crowd.sim.exceptions.HlaInternalException;
+import crowd.sim.exceptions.HlaNotConnectedException;
+import crowd.sim.exceptions.HlaRtiException;
+
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Random;
@@ -7,11 +16,12 @@ public class Agent extends Occupier {
     private ArrayList<Vector2> traveledPath;
     public Vector2 destination;
     private static int agentCount;
+    private HlaAgent hlaInstance;
 
     // Temporary occupier to claim a grid tile for the next step of this agent
     private Occupier tempOccupier;
 
-    public Agent(Vector2 startPos) {
+    public Agent(Vector2 startPos) throws HlaNotConnectedException, HlaRtiException, HlaInternalException, HlaAttributeNotOwnedException {
         super(startPos);
         this.traveledPath = new ArrayList<>();
         this.occupierColor = Color.black;
@@ -19,11 +29,13 @@ public class Agent extends Occupier {
         this.tempOccupier = new Occupier(startPos);
         setRandomDestination();
         agentCount++;
+        createHLAInstance();
         System.out.println(this.name + " initiated at position: " + this.position + "\n------------------------");
     }
 
-    public void advance() {
+    public void advance() throws HlaRtiException, HlaNotConnectedException, HlaAttributeNotOwnedException, HlaInternalException {
 
+        //maybe move to chooseNextStep()
         if (destination == null | destinationReached()) {
             System.out.println(this.name + " reached destination! \n------------------------");
             setRandomDestination();
@@ -34,6 +46,7 @@ public class Agent extends Occupier {
         Grid.removeOccuppierAtPos(tempOccupier.position);
         this.position = tempOccupier.position;
         Grid.addOccupier(this);
+        updateHLAInstance();
         //System.out.println(this.name + " moving towards: " + this.position + "\n------------------------");
     }
 
@@ -79,5 +92,20 @@ public class Agent extends Occupier {
         double a = Math.abs(from.x - to.x);
         double b = Math.abs(from.z - to.z);
         return Math.sqrt((a * a) + (b * b));
+    }
+
+    private void createHLAInstance() throws HlaNotConnectedException, HlaRtiException, HlaInternalException, HlaAttributeNotOwnedException {
+        hlaInstance = CrowdSimulation.hlaWorldInstance.getHlaAgentManager().createLocalHlaAgent();
+        updateHLAInstance();
+        //agent.getHlaAgentUpdater().
+    }
+
+    private void updateHLAInstance() throws HlaRtiException, HlaAttributeNotOwnedException, HlaNotConnectedException, HlaInternalException {
+        HlaAgentUpdater updater = hlaInstance.getHlaAgentUpdater();
+        updater.setX(position.x);
+        updater.setY(0);
+        updater.setZ(position.z);
+        updater.setName(name);
+        updater.sendUpdate();
     }
 }
