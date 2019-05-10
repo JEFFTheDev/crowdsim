@@ -97,7 +97,6 @@ public class Agent extends Occupier {
     private void createHLAInstance() throws HlaNotConnectedException, HlaRtiException, HlaInternalException, HlaAttributeNotOwnedException {
         hlaInstance = CrowdSimulation.hlaWorldInstance.getHlaAgentManager().createLocalHlaAgent();
         updateHLAInstance();
-        //agent.getHlaAgentUpdater().
     }
 
     private void updateHLAInstance() throws HlaRtiException, HlaAttributeNotOwnedException, HlaNotConnectedException, HlaInternalException {
