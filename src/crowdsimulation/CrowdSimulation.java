@@ -12,9 +12,13 @@ import java.util.Properties;
 public class CrowdSimulation {
 
     private static ArrayList<Agent> agents;
-    private static final int amountOfAgents = 15;
-    private static final int gridWidth = 20;
-    private static final int gridHeight = 20;
+    private static int amountOfAgents = 15;
+    private static int gridWStart = 0;
+    private static int gridWEnd = 10;
+    private static int gridHStart = 0;
+    private static int gridHEnd = 10;
+    private static int gridWidth = gridWEnd - gridWStart;
+    private static int gridHeight = gridHEnd - gridHStart;
     private static boolean isConnected;
     private static String fileName = "src/sim.config";
     static HlaWorld hlaWorldInstance;
@@ -26,7 +30,7 @@ public class CrowdSimulation {
             fileName = args[0];
         }
 
-        AdjustSettings();
+        InitializeSettings();
 
         // Create a HlaWorld instance and use it to connect to the federation
         hlaWorldInstance = HlaWorld.Factory.create();
@@ -35,7 +39,7 @@ public class CrowdSimulation {
         hlaWorldInstance.connect();
     }
 
-    private static void AdjustSettings() throws IOException {
+    private static void InitializeSettings() throws IOException {
         Properties properties = new Properties();
         properties.load(new FileInputStream(new File(fileName)));
 
@@ -44,6 +48,16 @@ public class CrowdSimulation {
         System.setProperty("crowd.sim.crcHost", properties.getProperty("crcHost"));
         System.setProperty("crowd.sim.crcPort", properties.getProperty("crcPort"));
         System.setProperty("crowd.sim.evolvedFomURL", properties.getProperty("fom"));
+
+        // Get all settings specific for the semantic crowd simulation and set them to according attributes
+        gridWStart = Integer.parseInt(properties.getProperty("gridWStart"));
+        gridWEnd = Integer.parseInt(properties.getProperty("gridWEnd"));
+        gridHStart = Integer.parseInt(properties.getProperty("gridHStart"));
+        gridHEnd = Integer.parseInt(properties.getProperty("gridHEnd"));
+        amountOfAgents = Integer.parseInt(properties.getProperty("amountOfAgents"));
+
+        gridWidth =  gridWEnd - gridWStart;
+        gridHeight = gridHEnd - gridHStart;
     }
 
     private static class WorldListener extends HlaWorldListener.Adapter {

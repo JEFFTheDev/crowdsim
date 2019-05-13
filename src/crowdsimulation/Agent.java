@@ -27,7 +27,7 @@ public class Agent extends Occupier {
 
         // The color the grid uses to visualize this agent
         this.occupierColor = Color.black;
-        this.name = "crowdsimulation.Agent " + agentCount;
+        this.name = "Agent " + agentCount;
         this.tempOccupier = new Occupier(startPos);
 
         // Set a random destination and tell the Hla federation this agent exists
