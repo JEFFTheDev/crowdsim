@@ -1,3 +1,5 @@
+package crowdsimulation;
+
 import java.awt.*;
 
 public class Occupier {

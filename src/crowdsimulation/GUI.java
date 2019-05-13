@@ -1,3 +1,5 @@
+package crowdsimulation;
+
 import javax.swing.*;
 import java.awt.*;
 

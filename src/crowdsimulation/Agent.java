@@ -1,3 +1,5 @@
+package crowdsimulation;
+
 import crowd.sim.HlaAgent;
 import crowd.sim.HlaAgentUpdater;
 import crowd.sim.exceptions.HlaAttributeNotOwnedException;
@@ -25,7 +27,7 @@ public class Agent extends Occupier {
 
         // The color the grid uses to visualize this agent
         this.occupierColor = Color.black;
-        this.name = "Agent " + agentCount;
+        this.name = "crowdsimulation.Agent " + agentCount;
         this.tempOccupier = new Occupier(startPos);
 
         // Set a random destination and tell the Hla federation this agent exists
@@ -57,7 +59,7 @@ public class Agent extends Occupier {
           */
         this.position = tempOccupier.position;
 
-        // Tell the Grid we're on the grid again
+        // Tell the crowdsimulation.Grid we're on the grid again
         Grid.addOccupier(this);
 
         // Update the HlaInstance to match our new attributes

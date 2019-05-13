@@ -1,3 +1,5 @@
+package crowdsimulation;
+
 public class Vector2 {
 
     public int x;

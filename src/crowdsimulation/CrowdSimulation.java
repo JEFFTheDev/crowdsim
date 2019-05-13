@@ -1,10 +1,10 @@
+package crowdsimulation;
+
 import crowd.sim.*;
 import crowd.sim.exceptions.*;
 
-import java.beans.ExceptionListener;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Properties;
@@ -21,6 +21,10 @@ public class CrowdSimulation {
 
     public static void main(String[] args) throws HlaRtiException, HlaInvalidLogicalTimeException, HlaFomException, HlaNotConnectedException, HlaConnectException, HlaInternalException, IOException {
         System.out.println("Booting crowdsim... \n------------------------");
+
+        if (args.length > 0) {
+            fileName = args[0];
+        }
 
         AdjustSettings();
 
