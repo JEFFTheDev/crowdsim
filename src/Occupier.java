@@ -2,9 +2,11 @@ import java.awt.*;
 
 public class Occupier {
 
-    // Set default occupier color to yellow
+    // The default color the grid will use to visualize this occupier
     public Color occupierColor = Color.green;
     protected Vector2 position;
+
+    // Default name of a standard occupier
     protected String name = "Occupied";
 
     public Occupier(Vector2 startPos) {

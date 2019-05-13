@@ -1,6 +1,4 @@
 import crowd.sim.HlaAgent;
-import crowd.sim.HlaAgentManager;
-import crowd.sim.HlaAgentManagerListener;
 import crowd.sim.HlaAgentUpdater;
 import crowd.sim.exceptions.HlaAttributeNotOwnedException;
 import crowd.sim.exceptions.HlaInternalException;
@@ -9,7 +7,6 @@ import crowd.sim.exceptions.HlaRtiException;
 
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Random;
 
 public class Agent extends Occupier {
 
@@ -23,42 +20,64 @@ public class Agent extends Occupier {
 
     public Agent(Vector2 startPos) throws HlaNotConnectedException, HlaRtiException, HlaInternalException, HlaAttributeNotOwnedException {
         super(startPos);
+
         this.traveledPath = new ArrayList<>();
+
+        // The color the grid uses to visualize this agent
         this.occupierColor = Color.black;
         this.name = "Agent " + agentCount;
         this.tempOccupier = new Occupier(startPos);
+
+        // Set a random destination and tell the Hla federation this agent exists
         setRandomDestination();
+        createHlaInstance();
+
         agentCount++;
-        createHLAInstance();
+
         System.out.println(this.name + " initiated at position: " + this.position + "\n------------------------");
     }
 
     public void advance() throws HlaRtiException, HlaNotConnectedException, HlaAttributeNotOwnedException, HlaInternalException {
 
-        //maybe move to chooseNextStep()
         if (destination == null | destinationReached()) {
-            System.out.println(this.name + " reached destination! \n------------------------");
+            System.out.println(this.name + " reached destination!");
             setRandomDestination();
         }
 
+        // Register the current position in the travel history of this agent
         traveledPath.add(this.position);
-        Grid.removeOccuppierAtPos(this.position);
-        Grid.removeOccuppierAtPos(tempOccupier.position);
+
+        // Tell the grid this agent and the temporary occupier are not in the same place anymore
+        Grid.removeOccupierAtPos(this.position);
+        Grid.removeOccupierAtPos(tempOccupier.position);
+
+        /*
+         Set the current position to the temporary occupier's position because the agent is making
+         it's next step.
+          */
         this.position = tempOccupier.position;
+
+        // Tell the Grid we're on the grid again
         Grid.addOccupier(this);
-        updateHLAInstance();
-        //System.out.println(this.name + " moving towards: " + this.position + "\n------------------------");
+
+        // Update the HlaInstance to match our new attributes
+        updateHlaInstance();
     }
 
     public void chooseNextStep() {
-        // check if list has more than 0 items
+        // Get the surrounding available tiles around this agents' position
         ArrayList<Vector2> tiles = Grid.getSurroundingAvailNodes(this.position);
 
+        // Do nothing if there are no available tiles
         if (tiles.isEmpty()) {
             return;
         }
 
-        //tiles.get(new Random().nextInt(tiles.size()));
+        /*
+        Set a temporary occupier on the closest available node to our destination.
+        With the temporary occupier we claim a tile so that no other agent will
+        step on it.
+         */
         tempOccupier.position = closestNodeToDest(tiles);
         Grid.addOccupier(tempOccupier);
     }
@@ -75,10 +94,22 @@ public class Agent extends Occupier {
         double shortestDist = 0;
         Vector2 bestPos = this.position;
 
+        /*
+        Loop through the positions list and check which one is closest to our
+        destination.
+         */
         for (int i = 0; i < positions.size(); i++) {
             Vector2 pos = positions.get(i);
             double currentDist = distanceBetweenVectors(destination, pos);
 
+            /*
+             If the current distance is shorter than assigned shortest distance
+             assign the current distance to shortest distance and set the best
+             position to our current position.
+
+             If i == 0 shortest distance is not assigned yet so it's always
+             the shortest distance.
+              */
             if (currentDist < shortestDist || i == 0) {
                 shortestDist = currentDist;
                 bestPos = pos;
@@ -88,18 +119,21 @@ public class Agent extends Occupier {
         return bestPos;
     }
 
+    // Use pythagoras theorem to find the distance between 2 positions
     private double distanceBetweenVectors(Vector2 from, Vector2 to) {
         double a = Math.abs(from.x - to.x);
         double b = Math.abs(from.z - to.z);
         return Math.sqrt((a * a) + (b * b));
     }
 
-    private void createHLAInstance() throws HlaNotConnectedException, HlaRtiException, HlaInternalException, HlaAttributeNotOwnedException {
+    // Create a HLA instance to let the federation know this agents exists
+    private void createHlaInstance() throws HlaNotConnectedException, HlaRtiException, HlaInternalException, HlaAttributeNotOwnedException {
         hlaInstance = CrowdSimulation.hlaWorldInstance.getHlaAgentManager().createLocalHlaAgent();
-        updateHLAInstance();
+        updateHlaInstance();
     }
 
-    private void updateHLAInstance() throws HlaRtiException, HlaAttributeNotOwnedException, HlaNotConnectedException, HlaInternalException {
+    // Update all attributes of the HlaInstance to match the attributes of this agent
+    private void updateHlaInstance() throws HlaRtiException, HlaAttributeNotOwnedException, HlaNotConnectedException, HlaInternalException {
         HlaAgentUpdater updater = hlaInstance.getHlaAgentUpdater();
         updater.setX(position.x);
         updater.setY(0);

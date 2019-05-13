@@ -1,6 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseEvent;
 
 public class GUI {
 
@@ -18,6 +17,7 @@ public class GUI {
 
         gridLabels = new JLabel[gridWidth][gridHeight];
 
+        // Add labels for each cell in the grid
         for (int i = 0; i < (gridWidth); i++) {
             for (int j = 0; j < gridHeight; j++) {
                 final JLabel label = new JLabel();
@@ -40,6 +40,7 @@ public class GUI {
 
     public static void resetGridColors() {
 
+        // Reset all grid tiles to default visualizations
         for (int i = 0; i < gridWidth; i++) {
             for (int j = 0; j < gridHeight; j++) {
                 JLabel label = gridLabels[i][j];
@@ -49,30 +50,24 @@ public class GUI {
         }
     }
 
-    public static void drawNodes() {
+    public static void drawOccupiers() {
 
         resetGridColors();
 
-        Occupier[][] occupiers = Grid.getOccupiers();
+        Occupier[][] occupiers = Grid.getGrid();
 
+        // Draw the grid's occupiers
         for (int i = 0; i < occupiers.length; i++) {
             for (int j = 0; j < occupiers[i].length; j++) {
                 Occupier occupier = occupiers[i][j];
 
                 if (occupier != null) {
-                    // Draw occupier colors unto grid
                     JLabel label = gridLabels[i][j];
                     label.setBackground(occupier.occupierColor);
                     label.setText(occupier.getName());
+
+                    // Sets the text color
                     label.setForeground(Color.white);
-
-                    if (occupier.getClass() == Agent.class) {
-                        //Agent a = (Agent)occupier;
-                        //JLabel destinationlabel = gridLabels[a.destination.x][a.destination.z];
-                        //destinationlabel.setBackground(Color.blue);
-                        //destinationlabel.setText(a.getName() + " dest");
-                    }
-
                 }
 
             }

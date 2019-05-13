@@ -1,22 +1,21 @@
 import crowd.sim.*;
 import crowd.sim.exceptions.*;
-import se.pitch.ral.api.LogicalTime;
 
-import javax.swing.*;
 import java.util.ArrayList;
 
 public class CrowdSimulation {
 
     private static ArrayList<Agent> agents;
-    private static JLabel[][] gridLabels;
-    private static final int amountOfAgents = 20;
-    private static final int gridWidth = 25;
-    private static final int gridHeight = 25;
+    private static final int amountOfAgents = 15;
+    private static final int gridWidth = 20;
+    private static final int gridHeight = 20;
     public static boolean isConnected;
     public static HlaWorld hlaWorldInstance;
 
     public static void main(String[] args) throws HlaRtiException, HlaInvalidLogicalTimeException, HlaFomException, HlaNotConnectedException, HlaConnectException, HlaInternalException {
         System.out.println("Booting crowdsim... \n------------------------");
+
+        // Create a HlaWorld instance and use it to connect to the federation
         hlaWorldInstance = HlaWorld.Factory.create();
         hlaWorldInstance.addHlaWorldListener(new WorldListener());
         hlaWorldInstance.connect();
@@ -53,22 +52,25 @@ public class CrowdSimulation {
 
     public static void startSimulation() throws InterruptedException, HlaAttributeNotOwnedException, HlaNotConnectedException, HlaRtiException, HlaInternalException, HlaInTimeAdvancingStateException, HlaInvalidLogicalTimeException {
 
-        Grid.Initlialize(gridWidth, gridHeight);
+        Grid.Initialize(gridWidth, gridHeight);
         GUI.drawGrid();
-        GUI.drawNodes();
+        GUI.drawOccupiers();
         agents = createAgents();
 
-        while(isConnected){
+        while (isConnected) {
             advanceSimulation();
         }
     }
 
+    // Creates the agents in our simulation and places them on a random position on the grid
     private static ArrayList<Agent> createAgents() throws HlaNotConnectedException, HlaRtiException, HlaInternalException, HlaAttributeNotOwnedException {
         ArrayList<Agent> newAgents = new ArrayList<>();
 
         for (int i = 0; i < amountOfAgents; i++) {
             Agent newAgent = new Agent(Grid.getRandomPosition());
             newAgents.add(newAgent);
+
+            // Tell the grid we placed an agent on it
             Grid.addOccupier(newAgent);
         }
 
@@ -78,19 +80,22 @@ public class CrowdSimulation {
     private static void advanceSimulation() throws InterruptedException, HlaAttributeNotOwnedException, HlaRtiException, HlaNotConnectedException, HlaInternalException, HlaInTimeAdvancingStateException, HlaInvalidLogicalTimeException {
         System.out.println("Advancing simulation... \n------------------------");
 
+        // Make every agent decide where it wants to go next
         for (Agent agent : agents) {
             agent.chooseNextStep();
         }
 
-        GUI.drawNodes();
+        // Draw all the occupiers on the grid
+        GUI.drawOccupiers();
         Thread.sleep(200);
 
+        // Make every agent set there previously chosen step
         for (Agent agent : agents) {
             agent.advance();
         }
 
         Thread.sleep(200);
-        GUI.drawNodes();
+        GUI.drawOccupiers();
 
         Thread.sleep(200);
     }
