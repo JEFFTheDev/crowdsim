@@ -1,7 +1,13 @@
 import crowd.sim.*;
 import crowd.sim.exceptions.*;
 
+import java.beans.ExceptionListener;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Properties;
 
 public class CrowdSimulation {
 
@@ -9,16 +15,31 @@ public class CrowdSimulation {
     private static final int amountOfAgents = 15;
     private static final int gridWidth = 20;
     private static final int gridHeight = 20;
-    public static boolean isConnected;
-    public static HlaWorld hlaWorldInstance;
+    private static boolean isConnected;
+    private static String fileName = "src/sim.config";
+    static HlaWorld hlaWorldInstance;
 
-    public static void main(String[] args) throws HlaRtiException, HlaInvalidLogicalTimeException, HlaFomException, HlaNotConnectedException, HlaConnectException, HlaInternalException {
+    public static void main(String[] args) throws HlaRtiException, HlaInvalidLogicalTimeException, HlaFomException, HlaNotConnectedException, HlaConnectException, HlaInternalException, IOException {
         System.out.println("Booting crowdsim... \n------------------------");
+
+        AdjustSettings();
 
         // Create a HlaWorld instance and use it to connect to the federation
         hlaWorldInstance = HlaWorld.Factory.create();
         hlaWorldInstance.addHlaWorldListener(new WorldListener());
+
         hlaWorldInstance.connect();
+    }
+
+    private static void AdjustSettings() throws IOException {
+        Properties properties = new Properties();
+        properties.load(new FileInputStream(new File(fileName)));
+
+        // Get all settings from the config file and set them for this federate
+        System.setProperty("crowd.sim.federateName", properties.getProperty("federateName"));
+        System.setProperty("crowd.sim.crcHost", properties.getProperty("crcHost"));
+        System.setProperty("crowd.sim.crcPort", properties.getProperty("crcPort"));
+        System.setProperty("crowd.sim.evolvedFomURL", properties.getProperty("fom"));
     }
 
     private static class WorldListener extends HlaWorldListener.Adapter {
