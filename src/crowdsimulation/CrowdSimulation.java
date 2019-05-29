@@ -1,7 +1,8 @@
 package crowdsimulation;
 
 import crowd.sim.*;
-import crowd.sim.exceptions.*;
+import crowd.sim.datatypes.TileStatus;
+import crowd.sim.datatypes.TimeType;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,32 +12,35 @@ import java.util.Properties;
 
 public class CrowdSimulation {
 
-    private static ArrayList<Agent> agents;
+    public static ArrayList<Agent> agents;
     private static int amountOfAgents = 15;
-    private static int gridWStart = 0;
-    private static int gridWEnd = 10;
-    private static int gridHStart = 0;
-    private static int gridHEnd = 10;
+    public static int gridWStart = 0;
+    public static int gridWEnd = 10;
+    public static int gridHStart = 0;
+    public static int gridHEnd = 10;
     private static int gridWidth = gridWEnd - gridWStart;
     private static int gridHeight = gridHEnd - gridHStart;
     private static boolean isConnected;
     private static String fileName = "src/sim.config";
-    static HlaWorld hlaWorldInstance;
+    static HlaWorld world;
 
-    public static void main(String[] args) throws HlaRtiException, HlaInvalidLogicalTimeException, HlaFomException, HlaNotConnectedException, HlaConnectException, HlaInternalException, IOException {
+    public static void main(String[] args) throws Exception {
         System.out.println("Booting crowdsim... \n------------------------");
 
         if (args.length > 0) {
             fileName = args[0];
         }
 
+        TimeHandler.instance = new TimeHandler();
+        TimeHandler.instance.start();
+
         InitializeSettings();
 
-        // Create a HlaWorld instance and use it to connect to the federation
-        hlaWorldInstance = HlaWorld.Factory.create();
-        hlaWorldInstance.addHlaWorldListener(new WorldListener());
-
-        hlaWorldInstance.connect();
+        world = HlaWorld.Factory.create();
+        world.addHlaWorldListener(new WorldListener());
+        world.getHlaAgentManager().addHlaAgentManagerListener(new AgentListener());
+        world.getHlaInteractionManager().addHlaInteractionListener(new InteractionListener());
+        world.connect();
     }
 
     private static void InitializeSettings() throws IOException {
@@ -56,29 +60,29 @@ public class CrowdSimulation {
         gridHEnd = Integer.parseInt(properties.getProperty("gridHEnd"));
         amountOfAgents = Integer.parseInt(properties.getProperty("amountOfAgents"));
 
-        gridWidth =  gridWEnd - gridWStart;
+        String path = properties.getProperty("path");
+
+        for(String p : path.split(",")){
+            String[] nodes = p.split(":");
+            Agent.definedPath.add(new Vector2(Integer.parseInt(nodes[0]), Integer.parseInt(nodes[1])));
+        }
+
+        gridWidth = gridWEnd - gridWStart;
         gridHeight = gridHEnd - gridHStart;
     }
 
     private static class WorldListener extends HlaWorldListener.Adapter {
         public void connected(HlaTimeStamp timeStamp) {
             System.out.println("Connected to Federation...\n------------------------");
-            CrowdSimulation.isConnected = true;
+
             try {
+                createHlaGrid();
+                CrowdSimulation.isConnected = true;
                 CrowdSimulation.startSimulation();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (HlaAttributeNotOwnedException e) {
-                e.printStackTrace();
-            } catch (HlaNotConnectedException e) {
-                e.printStackTrace();
-            } catch (HlaRtiException e) {
-                e.printStackTrace();
-            } catch (HlaInternalException e) {
-                e.printStackTrace();
-            } catch (HlaInTimeAdvancingStateException e) {
-                e.printStackTrace();
-            } catch (HlaInvalidLogicalTimeException e) {
+
+                // Let the federation know we exist by sending a time tick
+                TimeHandler.instance.sendTimeGrantCallback(TimeType.PREPARE, true);
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -89,24 +93,102 @@ public class CrowdSimulation {
         }
     }
 
-    public static void startSimulation() throws InterruptedException, HlaAttributeNotOwnedException, HlaNotConnectedException, HlaRtiException, HlaInternalException, HlaInTimeAdvancingStateException, HlaInvalidLogicalTimeException {
+    private static class AgentListener extends HlaAgentManagerListener.Adapter{
+        public void hlaAgentInitialized(HlaAgent agent, HlaTimeStamp timeStamp, HlaLogicalTime logicalTime) {
 
-        Grid.Initialize(gridWidth, gridHeight);
-        GUI.drawGrid();
-        GUI.drawOccupiers();
-        agents = createAgents();
+            /*
+             If the agent is made by this federate, ignore it
+             also check if the agent's position is within this simulation's grid
+            */
+            if((agent.getProducingFederate().getFederateName() == world.getFederateId().getFederateName()) || !Grid.isWithinJurisdiction((int)agent.getX(), (int)agent.getZ())){
+                return;
+            }
 
-        while (isConnected) {
-            advanceSimulation();
+            try {
+                System.out.println(agent.getX() + " / " + agent.getZ());
+
+                // Adopt the agent from another federation
+                int x = (int) agent.getX() - gridWStart;
+                int z = (int) agent.getZ() - gridHStart;
+                Vector2 agentPosition = new Vector2(x, z);
+                Agent simAgent = new Agent(agentPosition, false);
+                simAgent.name = agent.getName();
+                simAgent.createHlaInstance();
+                agents.add(simAgent);
+                Grid.addOccupier(simAgent);
+                GUI.drawOccupiers();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
+    private static class InteractionListener extends HlaInteractionListener.Adapter {
+        public void timeGrant(boolean local, HlaInteractionManager.HlaTimeGrantParameters parameters, HlaTimeStamp timeStamp, HlaLogicalTime logicalTime) {
+            if (!local && !parameters.getReady()) {
+                try {
+                    //advanceSimulation(parameters.getType());
+                    TimeHandler.instance.advanceSimulation(parameters.getType());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        public void tileRequest(boolean local, HlaInteractionManager.HlaTileRequestParameters parameters, HlaTimeStamp timeStamp, HlaLogicalTime logicalTime){
+
+            /*
+             Return if the tile request was sent by this federate or if the status is unknown
+              */
+            if (parameters.getProducingFederate().getFederateName() == world.getFederateId().getFederateName()) {
+                return;
+            }
+
+            System.out.println("received tile request");
+
+            /*
+            if the tile is outside of this federate's boundaries notify the grid about it's existence
+             */
+            if(!Grid.isWithinJurisdiction((int)parameters.getX(), (int)parameters.getZ())){
+                System.out.println(parameters.getX() + " / " + parameters.getZ());
+                try {
+                    Grid.notifyAboutTileRequest(parameters);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }else{
+                // If the requested tile is within this federate, return a request with the status of the tile
+                try {
+                    Tile requestedTile = new Tile((int)parameters.getX() -gridWStart, (int)parameters.getZ() -gridHStart);
+                    boolean isOccupied = Grid.isOccupied(requestedTile);
+                    requestedTile.status = isOccupied ? TileStatus.OCCUPIED : TileStatus.AVAILABLE;
+                    requestedTile.x = (int)parameters.getX();
+                    requestedTile.z = (int)parameters.getZ();
+                    Grid.sendTileRequest(requestedTile);
+                    System.out.println("Returning: " + requestedTile.status);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+    }
+
+    public static void startSimulation() throws Exception {
+        Grid.Initialize(gridWidth, gridHeight);
+        GUI.drawGrid();
+        agents = createAgents();
+        GUI.drawOccupiers();
+    }
+
     // Creates the agents in our simulation and places them on a random position on the grid
-    private static ArrayList<Agent> createAgents() throws HlaNotConnectedException, HlaRtiException, HlaInternalException, HlaAttributeNotOwnedException {
+    private static ArrayList<Agent> createAgents() throws Exception {
         ArrayList<Agent> newAgents = new ArrayList<>();
 
         for (int i = 0; i < amountOfAgents; i++) {
-            Agent newAgent = new Agent(Grid.getRandomPosition());
+            //Grid.getRandomPosition()
+            Agent newAgent = new Agent(new Vector2(0,0), true);
+            //newAgent.destination = new Vector2(15, 5);
             newAgents.add(newAgent);
 
             // Tell the grid we placed an agent on it
@@ -116,26 +198,15 @@ public class CrowdSimulation {
         return newAgents;
     }
 
-    private static void advanceSimulation() throws InterruptedException, HlaAttributeNotOwnedException, HlaRtiException, HlaNotConnectedException, HlaInternalException, HlaInTimeAdvancingStateException, HlaInvalidLogicalTimeException {
-        System.out.println("Advancing simulation... \n------------------------");
 
-        // Make every agent decide where it wants to go next
-        for (Agent agent : agents) {
-            agent.chooseNextStep();
-        }
-
-        // Draw all the occupiers on the grid
-        GUI.drawOccupiers();
-        Thread.sleep(200);
-
-        // Make every agent set there previously chosen step
-        for (Agent agent : agents) {
-            agent.advance();
-        }
-
-        Thread.sleep(200);
-        GUI.drawOccupiers();
-
-        Thread.sleep(200);
+    // Tells the HLA world which part of the grid this simulation is responsible for
+    private static void createHlaGrid() throws Exception {
+        HlaGrid grid = world.getHlaGridManager().createLocalHlaGrid();
+        HlaGridUpdater updater = grid.getHlaGridUpdater();
+        updater.setGridWStart(gridWStart);
+        updater.setGridWEnd(gridWEnd);
+        updater.setGridHStart(gridHStart);
+        updater.setGridHEnd(gridHEnd);
+        updater.sendUpdate();
     }
 }

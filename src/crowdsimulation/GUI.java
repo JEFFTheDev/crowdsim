@@ -47,7 +47,10 @@ public class GUI {
             for (int j = 0; j < gridHeight; j++) {
                 JLabel label = gridLabels[i][j];
                 label.setBackground(Color.white);
-                label.setText("");
+                int width = CrowdSimulation.gridWStart + i;
+                int height = CrowdSimulation.gridHStart + j;
+                label.setText("[" + width + ", " + height + "]");
+                label.setForeground(Color.black);
             }
         }
     }
@@ -66,10 +69,12 @@ public class GUI {
                 if (occupier != null) {
                     JLabel label = gridLabels[i][j];
                     label.setBackground(occupier.occupierColor);
+
                     label.setText(occupier.getName());
 
                     // Sets the text color
                     label.setForeground(Color.white);
+
                 }
 
             }

@@ -2,10 +2,6 @@ package crowdsimulation;
 
 import crowd.sim.HlaAgent;
 import crowd.sim.HlaAgentUpdater;
-import crowd.sim.exceptions.HlaAttributeNotOwnedException;
-import crowd.sim.exceptions.HlaInternalException;
-import crowd.sim.exceptions.HlaNotConnectedException;
-import crowd.sim.exceptions.HlaRtiException;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -15,43 +11,81 @@ public class Agent extends Occupier {
     private ArrayList<Vector2> traveledPath;
     public Vector2 destination;
     private static int agentCount;
-    private HlaAgent hlaInstance;
+    public HlaAgent hlaInstance;
+    private ArrayList<Tile> tilesAroundMe;
+    public enum State{TRANSFERRING, TRANSFERRED, INSIMULATION}
+    public State state;
+    private int currentDestIndex = -1;
+    public static ArrayList<Vector2> definedPath = new ArrayList<>();
 
     // Temporary occupier to claim a grid tile for the next step of this agent
-    private Occupier tempOccupier;
+    public Occupier tempOccupier;
 
-    public Agent(Vector2 startPos) throws HlaNotConnectedException, HlaRtiException, HlaInternalException, HlaAttributeNotOwnedException {
+    public Agent(Vector2 startPos, boolean createHlaInstance) throws Exception {
         super(startPos);
-
+        this.state = State.INSIMULATION;
         this.traveledPath = new ArrayList<>();
 
         // The color the grid uses to visualize this agent
         this.occupierColor = Color.black;
-        this.name = "Agent " + agentCount;
+        this.name = "A" + agentCount + "-" + CrowdSimulation.world.getSettings().getCrcPort();
         this.tempOccupier = new Occupier(startPos);
 
         // Set a random destination and tell the Hla federation this agent exists
-        setRandomDestination();
-        createHlaInstance();
+        destination = getNextDestination();
+
+        if(createHlaInstance){
+            createHlaInstance();
+        }
 
         agentCount++;
 
         System.out.println(this.name + " initiated at position: " + this.position + "\n------------------------");
     }
 
-    public void advance() throws HlaRtiException, HlaNotConnectedException, HlaAttributeNotOwnedException, HlaInternalException {
+    public Vector2 getNextDestination(){
+        int index = currentDestIndex;
 
-        if (destination == null | destinationReached()) {
-            System.out.println(this.name + " reached destination!");
-            setRandomDestination();
+        if(index + 1 > definedPath.size() - 1) {
+            currentDestIndex = 0;
+        }else{
+            currentDestIndex++;
         }
+
+        return definedPath.get(currentDestIndex);
+    }
+
+    public void advance() throws Exception {
 
         // Register the current position in the travel history of this agent
         traveledPath.add(this.position);
 
         // Tell the grid this agent and the temporary occupier are not in the same place anymore
         Grid.removeOccupierAtPos(this.position);
+
+        if (state == State.TRANSFERRING) {
+            agentCount--;
+            /*
+             When the position is updated to be outside of this simulation. The bridge will automatically transfer
+             the agent.
+              */
+            this.position = tempOccupier.position;
+            updateHlaInstance();
+            //CrowdSimulation.world.getHlaAgentManager().deleteLocalHlaAgent(hlaInstance);
+            //Grid.transferMe(this);
+            state = State.TRANSFERRED;
+
+            //CrowdSimulation.world.getHlaAgentManager().deleteLocalHlaAgent(hlaInstance);
+
+            return;
+        }
+
         Grid.removeOccupierAtPos(tempOccupier.position);
+
+        if (destination == null | destinationReached()) {
+            System.out.println(this.name + " reached destination!");
+            destination = getNextDestination();
+        }
 
         /*
          Set the current position to the temporary occupier's position because the agent is making
@@ -59,50 +93,77 @@ public class Agent extends Occupier {
           */
         this.position = tempOccupier.position;
 
-        // Tell the crowdsimulation.Grid we're on the grid again
+        // Tell the Grid we're on the grid again
         Grid.addOccupier(this);
 
         // Update the HlaInstance to match our new attributes
         updateHlaInstance();
     }
 
-    public void chooseNextStep() {
-        // Get the surrounding available tiles around this agents' position
-        ArrayList<Vector2> tiles = Grid.getSurroundingAvailNodes(this.position);
+    public void chooseNextStep() throws Exception {
 
         // Do nothing if there are no available tiles
-        if (tiles.isEmpty()) {
+        if (tilesAroundMe.isEmpty()) {
             return;
         }
+
+        Vector2 bestStep = closestNodeToDest(tilesAroundMe);
 
         /*
         Set a temporary occupier on the closest available node to our destination.
         With the temporary occupier we claim a tile so that no other agent will
         step on it.
          */
-        tempOccupier.position = closestNodeToDest(tiles);
-        Grid.addOccupier(tempOccupier);
+        tempOccupier.position = bestStep;
+
+        /*
+        If the value of best step is true, this agent can stay in
+        this federate. Otherwise it will request a transfer to a
+        different federate.
+         */
+        if (!Grid.isOutOfBounds(new Tile(bestStep.x, bestStep.z))) {
+            Grid.addOccupier(tempOccupier);
+        } else {
+            /*
+             Tell the grid this agents wants to transfer to a different federate
+             adds a temporary occupier in another federate to let that federate know
+             this agent will transfer in the next time phase
+             */
+            state = State.TRANSFERRING;
+            Grid.requestTransfer(this);
+        }
+    }
+
+    public void prepare() throws Exception {
+        Grid.findSurroundingTiles(this.position, this);
+    }
+
+    public void setRequestedTiles(ArrayList<Tile> tiles) {
+        tilesAroundMe = tiles;
     }
 
     private boolean destinationReached() {
         return position.x == destination.x && position.z == destination.z;
     }
 
-    private void setRandomDestination() {
+    /*private void setRandomDestination() {
         destination = Grid.getRandomPosition();
-    }
+    }*/
 
-    private Vector2 closestNodeToDest(ArrayList<Vector2> positions) {
+    private Vector2 closestNodeToDest(ArrayList<Tile> positions) {
         double shortestDist = 0;
+
         Vector2 bestPos = this.position;
 
         /*
-        Loop through the positions list and check which one is closest to our
+        Loop through the positions map and check which one is closest to our
         destination.
          */
-        for (int i = 0; i < positions.size(); i++) {
-            Vector2 pos = positions.get(i);
-            double currentDist = distanceBetweenVectors(destination, pos);
+        int i = 0;
+
+        for (Tile pos : positions) {
+
+            double currentDist = distanceBetweenVectors(destination, new Vector2(pos.x, pos.z));
 
             /*
              If the current distance is shorter than assigned shortest distance
@@ -114,8 +175,10 @@ public class Agent extends Occupier {
               */
             if (currentDist < shortestDist || i == 0) {
                 shortestDist = currentDist;
-                bestPos = pos;
+                bestPos = new Vector2(pos.x, pos.z);
             }
+
+            i++;
         }
 
         return bestPos;
@@ -129,17 +192,17 @@ public class Agent extends Occupier {
     }
 
     // Create a HLA instance to let the federation know this agents exists
-    private void createHlaInstance() throws HlaNotConnectedException, HlaRtiException, HlaInternalException, HlaAttributeNotOwnedException {
-        hlaInstance = CrowdSimulation.hlaWorldInstance.getHlaAgentManager().createLocalHlaAgent();
+    public void createHlaInstance() throws Exception {
+        hlaInstance = CrowdSimulation.world.getHlaAgentManager().createLocalHlaAgent();
         updateHlaInstance();
     }
 
     // Update all attributes of the HlaInstance to match the attributes of this agent
-    private void updateHlaInstance() throws HlaRtiException, HlaAttributeNotOwnedException, HlaNotConnectedException, HlaInternalException {
+    public void updateHlaInstance() throws Exception {
         HlaAgentUpdater updater = hlaInstance.getHlaAgentUpdater();
-        updater.setX(position.x);
+        updater.setX(position.x + CrowdSimulation.gridWStart);
         updater.setY(0);
-        updater.setZ(position.z);
+        updater.setZ(position.z + CrowdSimulation.gridHStart);
         updater.setName(name);
         updater.sendUpdate();
     }

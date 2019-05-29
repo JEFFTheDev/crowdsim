@@ -2,10 +2,10 @@ package crowdsimulation;
 
 public class Vector2 {
 
-    public int x;
-    public int z;
+    double x;
+    double z;
 
-    public Vector2(int x, int z) {
+    Vector2(double x, double z) {
         this.x = x;
         this.z = z;
     }
