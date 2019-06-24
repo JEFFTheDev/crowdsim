@@ -49,6 +49,7 @@ public class CrowdSimulation {
 
         // Get all settings from the config file and set them for this federate
         System.setProperty("crowd.sim.federateName", properties.getProperty("federateName"));
+        System.setProperty("crowd.sim.federationName", "Multi-node Crowd Simulation");
         System.setProperty("crowd.sim.crcHost", properties.getProperty("crcHost"));
         System.setProperty("crowd.sim.crcPort", properties.getProperty("crcPort"));
         System.setProperty("crowd.sim.evolvedFomURL", properties.getProperty("fom"));
@@ -185,14 +186,23 @@ public class CrowdSimulation {
     private static ArrayList<Agent> createAgents() throws Exception {
         ArrayList<Agent> newAgents = new ArrayList<>();
 
+        int positionZ = 0;
+
         for (int i = 0; i < amountOfAgents; i++) {
             //Grid.getRandomPosition()
-            Agent newAgent = new Agent(new Vector2(0,0), true);
+            Agent newAgent = new Agent(new Vector2(0,positionZ), true);
+            positionZ+=2;
+            //Agent secondAgent = new Agent(new Vector2(0, 5), true);
+            //Agent thirdAgent = new Agent(new Vector2(0, 7), true);
             //newAgent.destination = new Vector2(15, 5);
             newAgents.add(newAgent);
+            //newAgents.add(secondAgent);
+            //newAgents.add(thirdAgent);
 
             // Tell the grid we placed an agent on it
             Grid.addOccupier(newAgent);
+            //Grid.addOccupier(secondAgent);
+            //Grid.addOccupier(thirdAgent);
         }
 
         return newAgents;

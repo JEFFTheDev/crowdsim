@@ -71,21 +71,15 @@ public class Agent extends Occupier {
               */
             this.position = tempOccupier.position;
             updateHlaInstance();
-            //CrowdSimulation.world.getHlaAgentManager().deleteLocalHlaAgent(hlaInstance);
-            //Grid.transferMe(this);
             state = State.TRANSFERRED;
 
-            //CrowdSimulation.world.getHlaAgentManager().deleteLocalHlaAgent(hlaInstance);
 
             return;
         }
 
         Grid.removeOccupierAtPos(tempOccupier.position);
 
-        if (destination == null | destinationReached()) {
-            System.out.println(this.name + " reached destination!");
-            destination = getNextDestination();
-        }
+
 
         /*
          Set the current position to the temporary occupier's position because the agent is making
@@ -105,6 +99,11 @@ public class Agent extends Occupier {
         // Do nothing if there are no available tiles
         if (tilesAroundMe.isEmpty()) {
             return;
+        }
+
+        if (destination == null | destinationReached()) {
+            System.out.println(this.name + " reached destination!");
+            destination = getNextDestination();
         }
 
         Vector2 bestStep = closestNodeToDest(tilesAroundMe);

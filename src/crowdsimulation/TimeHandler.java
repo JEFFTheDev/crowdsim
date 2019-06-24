@@ -12,7 +12,7 @@ public class TimeHandler extends Thread {
     public Mutex mutex = new Mutex();
     public static TimeHandler instance;
 
-    public void advanceSimulation(TimeType phase) throws Exception {
+    void advanceSimulation(TimeType phase) throws Exception {
 
         try {
             mutex.lock();
@@ -27,7 +27,6 @@ public class TimeHandler extends Thread {
 
                 switch (phase) {
                     case PREPARE:
-                        //System.out.println("Preparing simulation cycle... \n------------------------");
 
                         // Make every agent decide where it wants to go next
                         for (Agent agent : CrowdSimulation.agents) {
@@ -36,8 +35,6 @@ public class TimeHandler extends Thread {
 
                         break;
                     case ADVANCE:
-                        //System.out.println("Advancing simulation... \n------------------------");
-
                         // Make every agent set there previously chosen step
                         for (Agent agent : CrowdSimulation.agents) {
                             agent.advance();
@@ -46,7 +43,6 @@ public class TimeHandler extends Thread {
                         break;
                     case COMPLETE:
                         CrowdSimulation.agents.removeIf(a -> a.state == Agent.State.TRANSFERRED);
-                        //System.out.println("Complete simulation cycle... \n------------------------");
                         break;
                 }
 
